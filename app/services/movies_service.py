@@ -14,6 +14,7 @@ from app.schemas.movie import (
 )
 from app.schemas.director import DirectorOut
 from app.schemas.genre import GenreOut
+from app.schemas.rating import RatingCreate, RatingOut
 
 
 class MoviesService:
@@ -173,4 +174,28 @@ class MoviesService:
             page_size=page_size,
             total_items=total_count,
             items=items,
+        )
+
+    @staticmethod
+    def create_rating(db: Session, movie_id: int, payload: RatingCreate) -> RatingOut:
+        """
+        Create a new rating for a movie.
+
+        Validates that the movie exists and score is within valid range (1-10).
+        Score validation is handled by Pydantic schema.
+        """
+        # Validate movie exists
+        movie = MoviesRepository.get_movie_by_id(db, movie_id)
+        if not movie:
+            raise NotFoundError("Movie not found")
+
+        # Create rating (score is already validated by Pydantic schema)
+        rating = MoviesRepository.create_rating(db, movie_id, payload.score)
+        db.commit()
+
+        return RatingOut(
+            rating_id=rating.id,
+            movie_id=rating.movie_id,
+            score=rating.score,
+            created_at=rating.created_at,
         )

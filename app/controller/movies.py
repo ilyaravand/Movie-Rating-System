@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.controller.deps import get_db
 from app.schemas.movie import MovieCreate, MovieUpdate
+from app.schemas.rating import RatingCreate
 from app.services.movies_service import MoviesService
 
 router = APIRouter(prefix="/movies", tags=["movies"])
@@ -69,3 +70,18 @@ def delete_movie(movie_id: int, db: Session = Depends(get_db)):
     """
     MoviesService.delete_movie(db, movie_id)
     return {"status": "success", "data": {"deleted": True, "movie_id": movie_id}}
+
+
+@router.post("/{movie_id}/ratings", status_code=status.HTTP_201_CREATED)
+def create_movie_rating(
+    movie_id: int,
+    payload: RatingCreate,
+    db: Session = Depends(get_db),
+):
+    """
+    Functionality #7: Create a new rating for a movie.
+
+    Score must be an integer between 1 and 10.
+    """
+    rating_out = MoviesService.create_rating(db, movie_id, payload)
+    return {"status": "success", "data": rating_out.model_dump()}

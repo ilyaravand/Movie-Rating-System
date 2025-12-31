@@ -124,3 +124,12 @@ class MoviesRepository:
 
         movies = db.execute(stmt).scalars().unique().all()
         return movies, total_count
+
+    @staticmethod
+    def create_rating(db: Session, movie_id: int, score: int) -> MovieRating:
+        """Create a new rating for a movie."""
+        rating = MovieRating(movie_id=movie_id, score=score)
+        db.add(rating)
+        db.flush()
+        db.refresh(rating)
+        return rating
