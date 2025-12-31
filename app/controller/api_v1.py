@@ -1,3 +1,6 @@
 from fastapi import APIRouter
 
+from app.controller.movies import router as movies_router
+
 api_router = APIRouter(prefix="/api/v1")
+api_router.include_router(movies_router)
