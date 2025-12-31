@@ -116,10 +116,15 @@ class MoviesService:
         db: Session,
         page: int = 1,
         page_size: int = 10,
+        title: str | None = None,
+        release_year: int | None = None,
+        genre: str | None = None,
     ) -> PaginatedMoviesOut:
         """
-        Get paginated list of movies.
+        Get paginated list of movies with optional filters.
 
+        Supports filtering by title (partial match), release_year, and genre name.
+        All filters can be combined (AND logic).
         Returns paginated list with rating statistics for each movie.
         """
         # Validate pagination parameters
@@ -128,10 +133,17 @@ class MoviesService:
         if page_size < 1 or page_size > 100:
             raise UnprocessableEntityError("page_size must be between 1 and 100")
 
+        # Validate release_year if provided
+        if release_year is not None and (release_year < 1888 or release_year > 2100):
+            raise UnprocessableEntityError("Invalid release_year")
+
         movies, total_count = MoviesRepository.get_movies_paginated(
             db=db,
             page=page,
             page_size=page_size,
+            title_filter=title,
+            release_year_filter=release_year,
+            genre_filter=genre,
         )
 
         # Build list items with rating stats
