@@ -2,10 +2,16 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
-from app.exceptions.api_exceptions import NotFoundError, BadRequestError
+from app.exceptions.api_exceptions import NotFoundError, BadRequestError, UnprocessableEntityError
 from app.models.movie import Movie
 from app.repositories.movies_repository import MoviesRepository
-from app.schemas.movie import MovieCreate, MovieUpdate, MovieDetailOut
+from app.schemas.movie import (
+    MovieCreate,
+    MovieUpdate,
+    MovieDetailOut,
+    MovieListItemOut,
+    PaginatedMoviesOut,
+)
 from app.schemas.director import DirectorOut
 from app.schemas.genre import GenreOut
 
@@ -104,3 +110,55 @@ class MoviesService:
 
         MoviesRepository.delete_movie(db, movie)
         db.commit()
+
+    @staticmethod
+    def get_movies_list(
+        db: Session,
+        page: int = 1,
+        page_size: int = 10,
+    ) -> PaginatedMoviesOut:
+        """
+        Get paginated list of movies.
+
+        Returns paginated list with rating statistics for each movie.
+        """
+        # Validate pagination parameters
+        if page < 1:
+            raise UnprocessableEntityError("page must be >= 1")
+        if page_size < 1 or page_size > 100:
+            raise UnprocessableEntityError("page_size must be between 1 and 100")
+
+        movies, total_count = MoviesRepository.get_movies_paginated(
+            db=db,
+            page=page,
+            page_size=page_size,
+        )
+
+        # Build list items with rating stats
+        items = []
+        for movie in movies:
+            avg_rating, ratings_count = MoviesRepository.get_rating_stats(db, movie.id)
+
+            items.append(
+                MovieListItemOut(
+                    id=movie.id,
+                    title=movie.title,
+                    release_year=movie.release_year,
+                    director=DirectorOut(
+                        id=movie.director.id,
+                        name=movie.director.name,
+                        birth_year=movie.director.birth_year,
+                        description=movie.director.description,
+                    ),
+                    genres=[g.name for g in movie.genres],
+                    average_rating=avg_rating,
+                    ratings_count=ratings_count,
+                )
+            )
+
+        return PaginatedMoviesOut(
+            page=page,
+            page_size=page_size,
+            total_items=total_count,
+            items=items,
+        )
