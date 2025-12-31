@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from sqlalchemy import select, func, delete
+from sqlalchemy import select, func, delete, and_
 from sqlalchemy.orm import Session, selectinload, joinedload
 
 from app.models.movie import Movie
@@ -72,17 +72,39 @@ class MoviesRepository:
         db: Session,
         page: int,
         page_size: int,
+        title_filter: str | None = None,
+        release_year_filter: int | None = None,
+        genre_filter: str | None = None,
     ) -> tuple[Sequence[Movie], int]:
         """
-        Get paginated list of movies.
+        Get paginated list of movies with optional filters.
 
         Returns tuple of (movies, total_count).
+        Supports filtering by title (partial match), release_year, and genre name.
+        All filters are combined with AND logic.
         """
-        # Get total count
+        # Build filter conditions
+        conditions = []
+        if title_filter:
+            conditions.append(Movie.title.ilike(f"%{title_filter}%"))
+        if release_year_filter is not None:
+            conditions.append(Movie.release_year == release_year_filter)
+        if genre_filter:
+            # Filter by genre name through the many-to-many relationship
+            genre_subquery = (
+                select(movie_genres.c.movie_id)
+                .join(Genre, movie_genres.c.genre_id == Genre.id)
+                .where(Genre.name.ilike(f"%{genre_filter}%"))
+            )
+            conditions.append(Movie.id.in_(genre_subquery))
+
+        # Get total count before pagination
         count_stmt = select(func.count(Movie.id))
+        if conditions:
+            count_stmt = count_stmt.where(and_(*conditions))
         total_count = db.execute(count_stmt).scalar_one()
 
-        # Base query with joins
+        # Base query with joins and filters
         stmt = (
             select(Movie)
             .options(
@@ -90,6 +112,8 @@ class MoviesRepository:
                 selectinload(Movie.genres),
             )
         )
+        if conditions:
+            stmt = stmt.where(and_(*conditions))
 
         # Apply pagination
         offset = (page - 1) * page_size

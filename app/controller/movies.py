@@ -12,18 +12,25 @@ router = APIRouter(prefix="/movies", tags=["movies"])
 def get_movies_list(
     page: int = Query(1, ge=1, description="Page number (starts from 1)"),
     page_size: int = Query(10, ge=1, le=100, description="Number of items per page"),
+    title: str | None = Query(None, description="Filter by title (partial match)"),
+    release_year: int | None = Query(None, ge=1888, le=2100, description="Filter by release year"),
+    genre: str | None = Query(None, description="Filter by genre name (partial match)"),
     db: Session = Depends(get_db),
 ):
     """
-    Functionality #1: Get paginated list of movies.
+    Functionality #1 and #2: Get paginated list of movies with optional filters.
 
-    Returns list of movies with pagination support.
+    Supports filtering by title, release_year, and genre.
+    All filters can be combined (AND logic).
     Each movie includes director info, genres, and rating statistics.
     """
     result = MoviesService.get_movies_list(
         db=db,
         page=page,
         page_size=page_size,
+        title=title,
+        release_year=release_year,
+        genre=genre,
     )
     return {"status": "success", "data": result.model_dump()}
 
