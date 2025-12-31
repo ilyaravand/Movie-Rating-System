@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from sqlalchemy import select, func, delete
 from sqlalchemy.orm import Session, selectinload, joinedload
 
@@ -64,3 +66,37 @@ class MoviesRepository:
         if genre_ids:
             rows = [{"movie_id": movie_id, "genre_id": gid} for gid in genre_ids]
             db.execute(movie_genres.insert(), rows)
+
+    @staticmethod
+    def get_movies_paginated(
+        db: Session,
+        page: int,
+        page_size: int,
+    ) -> tuple[Sequence[Movie], int]:
+        """
+        Get paginated list of movies.
+
+        Returns tuple of (movies, total_count).
+        """
+        # Get total count
+        count_stmt = select(func.count(Movie.id))
+        total_count = db.execute(count_stmt).scalar_one()
+
+        # Base query with joins
+        stmt = (
+            select(Movie)
+            .options(
+                joinedload(Movie.director),
+                selectinload(Movie.genres),
+            )
+        )
+
+        # Apply pagination
+        offset = (page - 1) * page_size
+        stmt = stmt.offset(offset).limit(page_size)
+
+        # Order by id for consistent pagination
+        stmt = stmt.order_by(Movie.id)
+
+        movies = db.execute(stmt).scalars().unique().all()
+        return movies, total_count

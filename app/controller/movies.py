@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.controller.deps import get_db
@@ -6,6 +6,26 @@ from app.schemas.movie import MovieCreate, MovieUpdate
 from app.services.movies_service import MoviesService
 
 router = APIRouter(prefix="/movies", tags=["movies"])
+
+
+@router.get("")
+def get_movies_list(
+    page: int = Query(1, ge=1, description="Page number (starts from 1)"),
+    page_size: int = Query(10, ge=1, le=100, description="Number of items per page"),
+    db: Session = Depends(get_db),
+):
+    """
+    Functionality #1: Get paginated list of movies.
+
+    Returns list of movies with pagination support.
+    Each movie includes director info, genres, and rating statistics.
+    """
+    result = MoviesService.get_movies_list(
+        db=db,
+        page=page,
+        page_size=page_size,
+    )
+    return {"status": "success", "data": result.model_dump()}
 
 
 @router.get("/{movie_id}")
