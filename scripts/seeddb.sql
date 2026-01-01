@@ -137,7 +137,7 @@ FROM filtered
 WHERE rn <= 1000;
 
 ------------------------------- 8. Insert movies (1000 films) -----------------------------
-INSERT INTO movies (title, director_id, release_year, "cast", description)
+INSERT INTO movies (title, director_id, release_year, "cast")
 SELECT
     s.title,
     d.id AS director_id,
@@ -156,8 +156,7 @@ SELECT
                 COALESCE((c_el->>'order')::INT, 999999)
             LIMIT 3
         ) AS sub
-    ) AS cast_string,
-    'Imported from TMDB 5000 dataset (real movie metadata)' AS description
+    ) AS cast_string
 FROM tmdb_selected s
 JOIN directors d
   ON d.name = s.director_name
