@@ -151,6 +151,8 @@ class MoviesService:
         items = []
         for movie in movies:
             avg_rating, ratings_count = MoviesRepository.get_rating_stats(db, movie.id)
+            # Convert Decimal to float for JSON serialization
+            avg_val = float(avg_rating) if avg_rating is not None else None
 
             items.append(
                 MovieListItemOut(
@@ -164,7 +166,7 @@ class MoviesService:
                         description=movie.director.description,
                     ),
                     genres=[g.name for g in movie.genres],
-                    average_rating=avg_rating,
+                    average_rating=avg_val,
                     ratings_count=ratings_count,
                 )
             )

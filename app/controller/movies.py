@@ -26,15 +26,22 @@ def get_movies_list(
     All filters can be combined (AND logic).
     Each movie includes director info, genres, and rating statistics.
     """
-    result = MoviesService.get_movies_list(
-        db=db,
-        page=page,
-        page_size=page_size,
-        title=title,
-        release_year=release_year,
-        genre=genre,
-    )
-    return {"status": "success", "data": result.model_dump()}
+    try:
+        result = MoviesService.get_movies_list(
+            db=db,
+            page=page,
+            page_size=page_size,
+            title=title,
+            release_year=release_year,
+            genre=genre,
+        )
+        # Use model_dump with exclude_none=False to ensure all fields are serialized
+        data = result.model_dump(exclude_none=False)
+        return {"status": "success", "data": data}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise
 
 
 @router.get("/{movie_id}")
