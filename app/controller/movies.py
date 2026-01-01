@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Query, status
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.controller.deps import get_db
@@ -63,13 +64,15 @@ def update_movie(movie_id: int, payload: MovieUpdate, db: Session = Depends(get_
     return {"status": "success", "data": movie_out.model_dump()}
 
 
-@router.delete("/{movie_id}")
+@router.delete("/{movie_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_movie(movie_id: int, db: Session = Depends(get_db)):
     """
     Functionality #6: Delete a movie (cascade cleanup via FK/relationship).
+
+    Returns 204 No Content on success (no response body).
     """
     MoviesService.delete_movie(db, movie_id)
-    return {"status": "success", "data": {"deleted": True, "movie_id": movie_id}}
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{movie_id}/ratings", status_code=status.HTTP_201_CREATED)
