@@ -7,13 +7,11 @@ import logging
 
 from app.controller.api_v1 import api_router
 from app.controller.health import router as health_router
-
+from app.config.logging import setup_logging
 from app.exceptions.api_exceptions import APIError
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+# Setup logging configuration
+setup_logging(level="INFO")
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Movie Rating System")
@@ -35,6 +33,22 @@ def api_error_handler(request: Request, exc: APIError):
         content={
             "status": "failure",
             "error": {"code": exc.code, "message": exc.message},
+        },
+    )
+
+
+@app.exception_handler(RequestValidationError)
+def validation_error_handler(request: Request, exc: RequestValidationError):
+    """Handle validation errors and return consistent error format."""
+    logger.warning(f"Validation error: {exc.errors()}")
+    errors = exc.errors()
+    # Extract first error message for simplicity
+    error_msg = errors[0]["msg"] if errors else "Validation error"
+    return JSONResponse(
+        status_code=422,
+        content={
+            "status": "failure",
+            "error": {"code": 422, "message": error_msg},
         },
     )
 
