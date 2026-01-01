@@ -23,3 +23,6 @@ env/
 dist/
 build/
 *.egg-info/
+
+# Database seeding CSV files (large files, should be downloaded separately)
+scripts/*.csv
