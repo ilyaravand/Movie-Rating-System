@@ -7,13 +7,11 @@ import logging
 
 from app.controller.api_v1 import api_router
 from app.controller.health import router as health_router
-
+from app.config.logging import setup_logging
 from app.exceptions.api_exceptions import APIError
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+# Setup logging configuration
+setup_logging(level="INFO")
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Movie Rating System")
