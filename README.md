@@ -97,19 +97,32 @@ docker compose exec app alembic upgrade head
 
 To populate the database with sample data (1000 movies):
 
+**Prerequisites**: Ensure CSV files (`tmdb_5000_movies.csv` and `tmdb_5000_credits.csv`) are in the `scripts/` directory.
+
 ```bash
-# First, copy CSV files to the database container
-docker compose cp scripts/tmdb_5000_movies.csv db:/tmp/
-docker compose cp scripts/tmdb_5000_credits.csv db:/tmp/
+# Copy CSV files to the database container
+docker compose cp scripts/tmdb_5000_movies.csv db:/tmp/tmdb_5000_movies.csv
+docker compose cp scripts/tmdb_5000_credits.csv db:/tmp/tmdb_5000_credits.csv
 
-# Then run the seeding script
-docker compose exec db psql -U app_user -d app_db -f /tmp/seeddb.sql
+# Copy and modify the SQL script to use /tmp paths
+docker compose cp scripts/seeddb.sql db:/tmp/seeddb.sql
 
-# Or if you have the CSV files locally, you can use:
-docker compose exec -T db psql -U app_user -d app_db < scripts/seeddb.sql
+# Run the seeding script inside the container
+docker compose exec db bash -c "cd /tmp && psql -U app_user -d app_db -f seeddb.sql"
 ```
 
-**Note**: The seeding script requires CSV files. If they are not in the repository, you may need to download them separately.
+**Alternative method** (if CSV files are already in the container):
+
+```bash
+# Enter the database container
+docker compose exec -it db bash
+
+# Inside the container, navigate to /tmp and run:
+cd /tmp
+psql -U app_user -d app_db -f seeddb.sql
+```
+
+**Note**: The seeding script requires CSV files. If they are not in the repository, you may need to download them separately or skip this step.
 
 ### Step 5: Verify the Setup
 
@@ -334,18 +347,27 @@ The project includes a seeding script to populate the database with sample data.
 
 ### Seeding Steps
 
-1. **Copy CSV files to database container:**
+1. **Ensure CSV files are in the scripts directory:**
+   - `scripts/tmdb_5000_movies.csv`
+   - `scripts/tmdb_5000_credits.csv`
+
+2. **Copy CSV files to database container:**
    ```bash
-   docker compose cp scripts/tmdb_5000_movies.csv db:/tmp/
-   docker compose cp scripts/tmdb_5000_credits.csv db:/tmp/
+   docker compose cp scripts/tmdb_5000_movies.csv db:/tmp/tmdb_5000_movies.csv
+   docker compose cp scripts/tmdb_5000_credits.csv db:/tmp/tmdb_5000_credits.csv
    ```
 
-2. **Run the seeding script:**
+3. **Copy the SQL script:**
    ```bash
-   docker compose exec db psql -U app_user -d app_db -f /tmp/seeddb.sql
+   docker compose cp scripts/seeddb.sql db:/tmp/seeddb.sql
    ```
 
-3. **Verify seeding:**
+4. **Run the seeding script:**
+   ```bash
+   docker compose exec db bash -c "cd /tmp && psql -U app_user -d app_db -f seeddb.sql"
+   ```
+
+5. **Verify seeding:**
    ```bash
    docker compose exec app python scripts/seed_check.py
    ```
