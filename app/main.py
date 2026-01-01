@@ -37,6 +37,22 @@ def api_error_handler(request: Request, exc: APIError):
     )
 
 
+@app.exception_handler(RequestValidationError)
+def validation_error_handler(request: Request, exc: RequestValidationError):
+    """Handle validation errors and return consistent error format."""
+    logger.warning(f"Validation error: {exc.errors()}")
+    errors = exc.errors()
+    # Extract first error message for simplicity
+    error_msg = errors[0]["msg"] if errors else "Validation error"
+    return JSONResponse(
+        status_code=422,
+        content={
+            "status": "failure",
+            "error": {"code": 422, "message": error_msg},
+        },
+    )
+
+
 @app.exception_handler(Exception)
 def global_exception_handler(request: Request, exc: Exception):
     """Handle all unhandled exceptions with detailed logging."""
