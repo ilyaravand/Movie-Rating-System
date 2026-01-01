@@ -150,9 +150,11 @@ Expected response:
 
 ### Step 6: Access the API
 
-- **API Base URL**: `http://localhost:8000`
+- **API Base URL**: `http://localhost:8000` or `http://127.0.0.1:8000`
 - **API Documentation**: `http://localhost:8000/docs` (Swagger UI)
 - **Alternative Docs**: `http://localhost:8000/redoc` (ReDoc)
+
+**Note**: If you encounter connection issues with `localhost`, try using `127.0.0.1` instead. Some clients (like Postman or Firefox) may have issues resolving `localhost` to IPv4, so using the explicit IP address `127.0.0.1` can resolve the problem.
 
 ## 📁 Project Structure
 
